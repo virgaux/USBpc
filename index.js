@@ -903,15 +903,17 @@ const sleepingTime = sleepingTimeInMinutes * 60000;
                 })
 
                 await page.waitForTimeout(5000);
-                await page.evaluate(async function () {
-                    await SM.Logout();
-                        }).catch(async function(){ 
+		await browsers[0].close();
+                browsers = [];
+                //await page.evaluate(async function () {
+                    //await SM.Logout();
+                        //}).catch(async function(){ 
                             //const pages =  browsers[0].pages();
                             //await Promise.all(pages.map(page =>page.close()));
-                            await browsers[0].close();
-                            browsers = [];
+                            //await browsers[0].close();
+                            //browsers = [];
                             //await browsers[0].process().kill('SIGKILL'); 
-                        })
+                        //})
             }
             let endTimer = new Date().getTime();
 			let totalTime = endTimer - startTimer;
