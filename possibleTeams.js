@@ -152,7 +152,7 @@ function countPriorityCard(matchDetails, priorityCards) {
         matchDetails.monster_6_id
     ]
 
-    return priorityCards?.filter(element => cardDetails?.includes(element)).length
+    return priorityCards.filter(element => cardDetails.includes(element)).length
 }
 const cardsIdsforSelectedBattles = (mana, ruleset, splinters, summoners, priorityCards) => battlesFilterByManacap(mana, ruleset, summoners)
     .then(x => {
