@@ -20,7 +20,7 @@ const tn = require('./telnotif');
 const nq = require('./newquests');
 const fnAllCardsDetails  = ('./data/cardsDetails.json');
 const battles = require('./auto-gather');
-const version = 11.6;
+const version = 11.7;
 const unitVersion = 'desktop'
 var copi = 0;
 async function readJSONFile(fn){
@@ -351,20 +351,25 @@ async function startBotPlayMatch(page, myCards, quest, claimQuestReward, priorit
     await waitUntilLoaded(page);
     const ercCurrentraw = await getElementTextByXpath(page, "//div[@class='dec-options'][1]/div[@class='value'][2]/div", 1000).catch(async () =>{
         misc.writeToLog('unable to get ECR via browser. Will get info via API call.')
-        await page.evaluate(()=>SM.Player.capture_rate).then(x=>(x.toString()).slice(0, 2)+ "." + (x.toString()).slice(2))
+        await page.evaluate(()=>SM.Player.capture_rate)
+            .then(async ecrApi1 => {
+            ecrApi1 = (ecrApi1.toString()).slice(0, 2)+ "." + (ecrApi1.toString()).slice(2);
+            return await ecrApi1; 
+        });
     });
-    let ecrInitial = ercCurrentraw.includes('%')? ercCurrentraw.split('%')[0] : ercCurrentraw
-    if ( ecrInitial >= 50) {
-        misc.writeToLog('Current ECR is ' + chalk.green(ecrInitial + "%"));
-    } else {
-        misc.writeToLog('Current ECR is ' + chalk.red(ecrInitial + "%"));
+    if (ercCurrentraw) {
+        let ecrInitial = ercCurrentraw.includes('%')? ercCurrentraw.split('%')[0] : ercCurrentraw
+        if ( parseFloat(ecrInitial) >= 50) {
+            misc.writeToLog('Current ECR is ' + chalk.green(ecrInitial + "%"));
+        } else {
+            misc.writeToLog('Current ECR is ' + chalk.red(ecrInitial + "%"));
+        }
+        if (parseFloat(ecrInitial) < parseFloat(ercThreshold)) {
+            misc.writeToLog('ECR is below threshold of ' + chalk.red(ercThreshold + '% ') + '- Skipping this account');
+            logSummary.push(' Account skipped: ' + chalk.red('ECR is below threshold of ' + ercThreshold))
+            return;
+        }
     }
-    if (ecrInitial < ercThreshold) {
-        misc.writeToLog('ECR is below threshold of ' + chalk.red(ercThreshold + '% ') + '- Skipping this account');
-        logSummary.push(' Account skipped: ' + chalk.red('ECR is below threshold of ' + ercThreshold))
-        return;
-    }
-
     //if quest done claim reward
     let quester = {}
     quester['Quest:'] = quest;
@@ -517,6 +522,7 @@ async function startBotPlayMatch(page, myCards, quest, claimQuestReward, priorit
        try 
         {
             const apiResponse = await withTimeout(100000, api.getPossibleTeams(matchDetails));
+
             if (apiResponse && !JSON.stringify(apiResponse).includes('api limit reached')) 
             {
                 readline.cursorTo(process.stdout, 0); 
@@ -908,24 +914,26 @@ async function startBotPlayMatch(page, myCards, quest, claimQuestReward, priorit
         try {
             await closePopups(page).catch(()=>misc.writeToLog('No pop up to be closed.'));
 			const UpDateDec = (await page.evaluate(()=>SM.Player.balances.find(x=>x.token=='DEC').balance)).toFixed(2);
-            const newERCRaw = await page.evaluate(()=>SM.Player.balances.find(x=>x.token=='ECR').balance);
-            let newERC = (newERCRaw.toString()).slice(0, 2)+ "." + (newERCRaw.toString()).slice(2)
+            const newERCRaw = await page.evaluate(()=>SM.Player.balances.find(x=>x.token=='ECR').balance)
+            .then(ecrApi2 => {
+                ecrApi2 = (ecrApi2.toString()).slice(0, 2)+ "." + (ecrApi2.toString()).slice(2)
+               return ecrApi2 });
             const newRating = await page.evaluate(()=>SM.Player.rating);
             misc.writeToLog('Updated Rating after battle is ' + chalk.yellow(newRating));
             logSummary.push(' New rating: ' + chalk.yellow(newRating));
 			logSummary.push(' New DEC Balance: ' + chalk.cyan(UpDateDec + ' DEC'));
             newlogvisual['Rating'] = newRating
             newlogvisual['DEC Balance'] = UpDateDec + ' dec'
-			let e = parseInt(newERC);
+			let e = parseFloat(newERCRaw);
                 if (e >= 50) {
-                    newERC = chalk.green(newERC + '%')
+                    newERC = chalk.green(e + '%')
                 }
                 else {
-                    newERC = chalk.red(newERC + '%')
+                    newERC = chalk.red(e + '%')
                 }
                 logSummary.push(' Remaining ERC: ' + newERC);
                 misc.writeToLog('Remaining ERC: ' + newERC);
-                newlogvisual['ECR'] = newERC.replace(/\u001b[^m]*?m/g,"")
+                newlogvisual['ERC'] = newERC.replace(/\u001b[^m]*?m/g,"")
 
         } catch (e) {
             misc.writeToLog(e);
