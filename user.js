@@ -18,15 +18,15 @@ getPlayerCards = async (username, oneDayAgo) => (await fetch(`https://api2.splin
       .then(advanced => basicCards.concat(advanced))
       .catch(async (e)=> {
         console.log('Error: game-api.splinterlands did not respond trying api.slinterlands... '); //3rd try
-        await fetch(`https://api.steemmonsters.io/cards/collection/${username}`)
+        await fetch(`https://api.splinterlands.io/cards/collection/${username}`)
         .then(x => x && x.json())
         .then(x => x['cards'] ? x['cards'].filter(x=>(x.delegated_to === null || x.delegated_to === username) 
         && (x.market_listing_type === null || x.delegated_to === username)
         && (!(x.last_used_player !== username && Date.parse(x.last_used_date) > oneDayAgo))).map(card => card.card_detail_id) : '')
           .then(advanced => basicCards.concat(advanced))
           .catch(async (e)=> {
-            console.log('Error: api.steemmonsters did not respond trying api.slinterlands... '); //4th try
-            await fetch(`https://api.splinterlands.io/cards/collection/${username}`)
+            console.log('Error: api.splinterlands did not respond trying api.steemmonsters... '); //4th try
+            await fetch(`https://api.steemmonsters.io/cards/collection/${username}`)
             .then(x => x && x.json())
             .then(x => x['cards'] ? x['cards'].filter(x=>(x.delegated_to === null || x.delegated_to === username) 
             && (x.market_listing_type === null || x.delegated_to === username)
